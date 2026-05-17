@@ -673,27 +673,31 @@ def findings_from_report(
     limit: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
     """Convert report into persisted findings.
-    
+
     Uses ranked candidates (post-rerank) when available for quality scores and explanations.
     Supplements with raw items from items_by_source for HN/PM that didn't rank highly
-    but are valuable for watchlist persistence.
+    but are valuable for watchlist persistence. When ranked_candidates is empty
+    (degraded path — rerank failed or was skipped), falls back to supplementing
+    all sources from items_by_source so findings aren't silently dropped.
     """
     findings = []
     seen_urls = set()
-    
-    # Phase 1: Process ranked candidates (high-quality data with explanations and corroboration)
+
     for candidate in report.ranked_candidates:
-        finding = finding_from_candidate(candidate)
-        findings.append(finding)
+        findings.append(finding_from_candidate(candidate))
         seen_urls.add(candidate.url)
-    
-    # Phase 2: Add HN/PM items not already captured in ranked candidates
-    for source_name in ["hackernews", "polymarket"]:
+
+    supplement_sources = (
+        list(report.items_by_source)
+        if not report.ranked_candidates
+        else ["hackernews", "polymarket"]
+    )
+    for source_name in supplement_sources:
         if source_name not in report.items_by_source:
             continue
         for item in report.items_by_source[source_name]:
             if item.url in seen_urls:
-                continue  # Already captured with rich data
+                continue
             findings.append({
                 "source": source_name,
                 "source_url": item.url,
@@ -705,8 +709,7 @@ def findings_from_report(
                 "relevance_score": item.local_relevance or 0.5,
             })
             seen_urls.add(item.url)
-    
-    # Apply global limit after collecting all findings (fix: was per-source, now global)
+
     return findings[:limit] if limit is not None else findings
 
 

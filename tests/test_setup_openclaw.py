@@ -200,8 +200,10 @@ class TestPollDeviceAuth:
     @patch("lib.setup_wizard.urlopen")
     def test_timeout_returns_none(self, mock_urlopen, mock_time):
         """Returns None when timeout is exceeded."""
-        # Simulate time passing beyond deadline
-        mock_time.time = MagicMock(side_effect=[0, 301])
+        # poll_device_auth calls time.time() for deadline init, last_reminder init,
+        # then once per while-loop iteration. Three values are enough for one check
+        # that exceeds the deadline.
+        mock_time.time = MagicMock(side_effect=[0, 0, 301])
         mock_time.sleep = MagicMock()
 
         result = setup_wizard.poll_device_auth("dc-123", interval=5, timeout=300)
@@ -211,7 +213,9 @@ class TestPollDeviceAuth:
     @patch("lib.setup_wizard.urlopen")
     def test_expired_token_returns_none(self, mock_urlopen, mock_time):
         """Returns None on expired_token error."""
-        mock_time.time = MagicMock(side_effect=[0, 0])
+        # Loop terminates via urlopen response, not the clock — pin time to 0
+        # so the deadline check stays a non-event regardless of call count.
+        mock_time.time = MagicMock(return_value=0)
         mock_time.sleep = MagicMock()
 
         expired_resp = MagicMock()
@@ -230,7 +234,7 @@ class TestPollDeviceAuth:
         """HTTP 400 during polling continues (authorization pending)."""
         from urllib.error import HTTPError
 
-        mock_time.time = MagicMock(side_effect=[0, 0, 0])
+        mock_time.time = MagicMock(return_value=0)
         mock_time.sleep = MagicMock()
 
         success_resp = MagicMock()

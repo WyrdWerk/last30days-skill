@@ -3,7 +3,7 @@
 import json
 import sqlite3
 import tempfile
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -503,16 +503,16 @@ def test_get_new_findings_filters_by_date(temp_db, sample_report):
     findings = store.findings_from_report(sample_report)
     store.store_findings(run_id, topic["id"], findings)
     
-    # Get findings since tomorrow (should be empty)
-    tomorrow = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+    # Use UTC because store writes first_seen via SQLite's datetime('now') (UTC).
+    # Local-time math here would flake near midnight UTC.
+    tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
     new_findings = store.get_new_findings(topic["id"], since=tomorrow)
-    
+
     assert len(new_findings) == 0
-    
-    # Get findings since yesterday (should have all)
-    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+
+    yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
     new_findings = store.get_new_findings(topic["id"], since=yesterday)
-    
+
     assert len(new_findings) == 4
 
 

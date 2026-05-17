@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  plugin-contract:
+  tests:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,5 +22,5 @@ jobs:
       - name: Set up Python
         run: uv python install 3.12
 
-      - name: Run plugin contract tests
-        run: uv run pytest tests/test_plugin_contract.py tests/test_version_consistency.py
+      - name: Run test suite
+        run: uv run pytest
