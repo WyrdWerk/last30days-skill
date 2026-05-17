@@ -314,6 +314,7 @@ def get_config() -> dict[str, Any]:
         ('LAST30DAYS_RERANK_MODEL', None),
         ('LAST30DAYS_X_MODEL', None),
         ('LAST30DAYS_X_BACKEND', None),
+        ('LAST30DAYS_STORE', None),
         ('OPENAI_MODEL_PIN', None),
         ('XAI_MODEL_PIN', None),
         ('SCRAPECREATORS_API_KEY', None),
@@ -322,6 +323,7 @@ def get_config() -> dict[str, Any]:
         ('CT0', None),
         ('BSKY_HANDLE', None),
         ('BSKY_APP_PASSWORD', None),
+        ('BSKY_SEARCH_HOST', None),
         ('TRUTHSOCIAL_TOKEN', None),
         ('BRAVE_API_KEY', None),
         ('EXA_API_KEY', None),
@@ -334,10 +336,21 @@ def get_config() -> dict[str, Any]:
         ('INCLUDE_SOURCES', ''),
         ('EXCLUDE_SOURCES', ''),
         ('LAST30DAYS_YOUTUBE_SSH_HOST', None),
+        ('LAST30DAYS_TRANSCRIPT_TIMEOUT', None),
     ]
 
     for key, default in keys:
         config[key] = os.environ.get(key) or merged_env.get(key, default)
+
+    # Backward-compat: ScrapeCreators' own examples and tutorials use the
+    # SCRAPE_CREATORS_API_KEY spelling (with underscore between SCRAPE and
+    # CREATORS). Accept that form too so users who follow the vendor's docs
+    # don't silently end up with has_scrapecreators=False. Canonical name
+    # wins when both are set.
+    if not config.get('SCRAPECREATORS_API_KEY'):
+        legacy = os.environ.get('SCRAPE_CREATORS_API_KEY') or merged_env.get('SCRAPE_CREATORS_API_KEY')
+        if legacy:
+            config['SCRAPECREATORS_API_KEY'] = legacy
 
     # Track which config source was used (highest-priority file source wins
     # the label; keychain is only reported when nothing else is configured).

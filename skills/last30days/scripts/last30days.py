@@ -908,7 +908,17 @@ def main() -> int:
         suppress_web_promo=bool(external_plan or comp_plan),
     )
     _write_last_run(topic, report)
-    if args.store:
+    # LAST30DAYS_STORE env var = persistence default-on. Read both os.environ
+    # (for shell-exported users) and config (for users who set it in
+    # ~/.config/last30days/.env, which env.py loads but does not propagate
+    # to os.environ). Mirrors the LAST30DAYS_DEBUG / LAST30DAYS_SKIP_PREFLIGHT
+    # convention; env-var or config wins, with `--store` flag still working.
+    _store_env = (
+        os.environ.get("LAST30DAYS_STORE")
+        or config.get("LAST30DAYS_STORE")
+        or ""
+    ).lower()
+    if args.store or _store_env in ("1", "true", "yes"):
         counts = persist_report(report)
         sys.stderr.write(
             f"[last30days] Stored {counts['new']} new, {counts['updated']} updated findings\n"
@@ -922,6 +932,7 @@ def main() -> int:
         # degraded-YouTube failure mode (videos returned but transcripts
         # silently failed - typically a stale yt-dlp binary).
         youtube_items = report.items_by_source.get("youtube") or []
+        instagram_items = report.items_by_source.get("instagram") or []
         research_results = {
             "youtube_videos_count": len(youtube_items),
             "youtube_transcripts_count": sum(
@@ -930,6 +941,17 @@ def main() -> int:
             ),
             "youtube_error": report.errors_by_source.get("youtube"),
             "x_error": report.errors_by_source.get("x"),
+            # Captions-disabled videos can never produce a transcript regardless
+            # of yt-dlp version; subtract them from the degraded-ratio
+            # denominator so a single uploader-disabled video does not trip the
+            # "stale yt-dlp" nudge.
+            "youtube_captions_disabled_count": sum(
+                1 for it in youtube_items if it.metadata.get("captions_disabled")
+            ),
+            # Track Instagram returned-zero-items so quality_nudge can detect
+            # the silent-failure case (SC configured but the v2 reels endpoint
+            # 500'd through both the original query and the hashtag retry).
+            "instagram_items_count": len(instagram_items),
         }
         quality = quality_nudge.compute_quality_score(config, research_results)
         if quality.get("nudge_text"):
