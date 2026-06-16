@@ -147,6 +147,30 @@ class JobsSourceTests(unittest.TestCase):
         self.assertEqual(1, len(parsed))
         self.assertEqual("GTM Lead", parsed[0]["title"])
 
+    def test_jsonld_jobs_without_urls_survive_normalize_and_dedupe(self):
+        from lib import dedupe, normalize
+
+        html = (
+            '<script type="application/ld+json">'
+            '{"@graph":['
+            '{"@type":"JobPosting","title":"Founding Designer","datePosted":"2026-06-01"},'
+            '{"@type":"JobPosting","title":"GTM Lead","datePosted":"2026-06-02"},'
+            '{"@type":"JobPosting","title":"Staff Engineer","datePosted":"2026-06-03"}'
+            ']}'
+            '</script>'
+        )
+        parsed = jobs.extract_jsonld_jobs(html, "https://acme.com/careers")
+        self.assertEqual(3, len(parsed))
+        self.assertTrue(all(item["url"] == "" for item in parsed))
+        self.assertTrue(all(item["source_url"] == "https://acme.com/careers" for item in parsed))
+
+        normalized = normalize.normalize_source_items("jobs", parsed, "2026-05-17", "2026-06-16")
+        kept = dedupe.dedupe_items(normalized)
+        self.assertEqual(
+            ["Founding Designer", "GTM Lead", "Staff Engineer"],
+            sorted(item.title for item in kept),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

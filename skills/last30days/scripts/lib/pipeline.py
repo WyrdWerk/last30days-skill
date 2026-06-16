@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import sys
 import threading
 import time
@@ -641,13 +642,34 @@ def _company_topic_likely(topic: str) -> bool:
     }
     if any(word in generic for word in lower.split()):
         return False
-    if " vs " in lower or " versus " in lower:
-        return True
     known_single_word_companies = {
         "apple", "uber", "google", "microsoft", "amazon", "meta", "netflix",
-        "openai", "anthropic", "qualtrics",
+        "openai", "anthropic", "qualtrics", "stripe", "brex",
     }
+    if " vs " in lower or " versus " in lower:
+        parts = re.split(r"\s+(?:vs|versus)\s+", text, maxsplit=1, flags=re.IGNORECASE)
+        if len(parts) != 2:
+            return False
+        return _comparison_side_company_like(parts[0], known_single_word_companies) or _comparison_side_company_like(
+            parts[1], known_single_word_companies
+        )
     return bool(text[:1].isupper() or lower in known_single_word_companies)
+
+
+def _comparison_side_company_like(side: str, known_companies: set[str]) -> bool:
+    token = re.sub(r"[^\w.+#-]", "", side.strip().split()[0] if side.strip() else "")
+    if not token:
+        return False
+    lower = token.lower()
+    common_tech_terms = {
+        "python", "ruby", "javascript", "typescript", "java", "go", "golang",
+        "rust", "php", "swift", "kotlin", "scala", "clojure", "elixir",
+        "react", "vue", "angular", "svelte", "node", "django", "rails",
+        "postgres", "mysql", "redis", "kubernetes", "docker",
+    }
+    if lower in common_tech_terms:
+        return False
+    return bool(token[:1].isupper() or lower in known_companies)
 
 
 def _warnings(

@@ -279,6 +279,7 @@ def _normalize_jobs(
             "location": location,
             "offices": item.get("offices") or [],
             "board_token": item.get("board_token") or "",
+            "source_url": item.get("source_url") or "",
             "source_domain": item.get("source_domain") or _domain_from_url(str(item.get("url") or "")) or "",
         },
     )

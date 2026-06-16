@@ -142,6 +142,16 @@ class PipelineV3Tests(unittest.TestCase):
         self.assertNotIn("jobs", report.items_by_source)
         self.assertNotIn("hiring_signals", report.artifacts)
 
+    def test_bare_language_comparison_topics_do_not_add_jobs(self):
+        for topic in ("python vs ruby", "Python vs Ruby"):
+            with self.subTest(topic=topic):
+                self.assertFalse(pipeline._company_topic_likely(topic))
+
+    def test_company_comparison_topics_add_jobs(self):
+        for topic in ("Stripe vs Brex", "OpenAI versus Anthropic"):
+            with self.subTest(topic=topic):
+                self.assertTrue(pipeline._company_topic_likely(topic))
+
     def test_standard_mode_omits_weak_large_company_jobs_signal(self):
         with patch("lib.pipeline._retrieve_stream") as mock_retrieve:
             def fake_retrieve(**kwargs):

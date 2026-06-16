@@ -430,16 +430,18 @@ def extract_jsonld_jobs(html: str, base_url: str = "") -> list[dict[str, Any]]:
             if not title or title in seen:
                 continue
             seen.add(title)
+            posting_url = str(obj.get("url") or "").strip()
             items.append({
                 "id": f"JL{len(items) + 1}",
                 "title": title,
-                "url": str(obj.get("url") or base_url or "").strip(),
+                "url": posting_url,
                 "description": _clean_html(str(obj.get("description") or ""))[:2000],
                 "date": _date_part(obj.get("datePosted")),
                 "date_confidence": "high" if obj.get("datePosted") else "low",
                 "provider": "careers-jsonld",
                 "department": str(obj.get("occupationalCategory") or "").strip(),
                 "location": _jsonld_location(obj),
+                "source_url": base_url,
                 "source_domain": domain,
                 "relevance": 0.6,
                 "why_relevant": "JobPosting structured data on careers page",
