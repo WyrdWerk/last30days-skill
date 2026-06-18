@@ -88,7 +88,62 @@ For fully custom UI with ElevenLabs backend: use the TypeScript SDK.
 
 **Start on Free** to test widget + custom LLM integration. **Creator at $22/month** is the minimum for real usage (overage billing unlocked).
 
-### 2.5 Commercial Licensing
+### 2.5 Programmatic Access: REST API, CLI, and MCP Server
+
+ElevenLabs has full programmatic access across three methods - all verified against live docs and GitHub.
+
+**REST API**
+
+Full CRUD for agent management. Key endpoints:
+- `POST /agents` - create agent
+- `GET /agents` - list agents
+- `GET /agents/{id}` - get config
+- `PATCH /agents/{id}` - update settings
+
+Also covers: knowledge base, phone numbers, conversations, widget config. Official SDKs in **Python** and **TypeScript**. No limit on number of agents per plan (limited only by concurrent calls and monthly credits).
+
+Docs: [elevenlabs.io/docs/api-reference/agents/create](https://elevenlabs.io/docs/api-reference/agents/create)
+
+**CLI (`@elevenlabs/agents-cli`)**
+
+Git-style workflow for agent config management:
+
+```bash
+elevenlabs agents list          # list agents on your account
+elevenlabs agents pull          # pull configs from platform to local files
+elevenlabs agents push          # push local changes back to platform
+```
+
+Edit agent configs as local files, version control them in git, push changes. Useful for CI/CD. API key stored in `~/.agents/api_keys.json`.
+
+Docs: [elevenlabs.io/docs/eleven-agents/operate/cli](https://elevenlabs.io/docs/eleven-agents/operate/cli)
+
+**Official MCP Server**
+
+Repo: [github.com/elevenlabs/elevenlabs-mcp](https://github.com/elevenlabs/elevenlabs-mcp)
+
+Works with Claude Desktop, Claude Code, Cursor, Windsurf, and any MCP-compatible host. Configure once with your ElevenLabs API key - Claude can then interact with ElevenLabs directly via tool calls without touching the dashboard.
+
+Official MCP capabilities: TTS generation, voice cloning, audio transcription, Conversational AI agent interactions, outbound call triggering.
+
+For agent + knowledge base management specifically: [github.com/jezweb/elevenlabs-mcp-server](https://github.com/jezweb/elevenlabs-mcp-server) - a community MCP built explicitly for this.
+
+**What Claude can do once MCP is configured:**
+- Create agents with specified system prompt, voice, LLM endpoint
+- Update agent config (change greeting, adjust prompt, swap LLM provider)
+- Manage knowledge base documents
+- Trigger outbound test calls
+- Pull the widget embed code for a specific agent
+
+The web embed stays a single two-line code block per site. MCP/API handles everything upstream: agent definition, config, prompt iteration, knowledge base - all from the conversation.
+
+**MCP setup steps:**
+1. Get ElevenLabs API key from dashboard
+2. Install: `npx @elevenlabs/mcp` or clone github.com/elevenlabs/elevenlabs-mcp
+3. Add to Claude Code MCP config with the API key
+4. Test by asking Claude to create a test agent and verify it appears in the ElevenLabs dashboard
+
+### 2.6 Commercial Licensing
 
 **Scenario A - Agency/done-for-you model:**
 - You build and manage agents for client businesses
@@ -182,6 +237,13 @@ ElevenLabs native WhatsApp integration connects to your WhatsApp Business Accoun
 13. **WhatsApp scope**: Explicitly define agent as task-scoped in system prompt - no open-domain responses
 14. **Domain allowlist**: Add your client domains to ElevenLabs widget Security tab before deploying to clients
 
+### MCP setup (do this alongside testing)
+15. Get ElevenLabs API key from the dashboard
+16. Install elevenlabs-mcp: `npx @elevenlabs/mcp` or clone [github.com/elevenlabs/elevenlabs-mcp](https://github.com/elevenlabs/elevenlabs-mcp)
+17. Add to Claude Code MCP config with the API key
+18. Test: ask Claude to create a test agent via MCP, verify it appears in the ElevenLabs dashboard
+19. From that point Claude can create/update/manage agents and knowledge bases without you touching the dashboard
+
 ---
 
 ## Key Sources
@@ -193,4 +255,9 @@ ElevenLabs native WhatsApp integration connects to your WhatsApp Business Accoun
 - OEM Terms: [elevenlabs.io/oem-terms](https://elevenlabs.io/oem-terms)
 - WhatsApp chatbot ban: [TechCrunch](https://techcrunch.com/2025/10/18/whatssapp-changes-its-terms-to-bar-general-purpose-chatbots-from-its-platform/)
 - Platform comparison: [aiagentrank.io/blog/vapi-vs-retell-vs-bland-2026](https://aiagentrank.io/blog/vapi-vs-retell-vs-bland-2026)
+- REST API - create agent: [elevenlabs.io/docs/api-reference/agents/create](https://elevenlabs.io/docs/api-reference/agents/create)
+- CLI docs: [elevenlabs.io/docs/eleven-agents/operate/cli](https://elevenlabs.io/docs/eleven-agents/operate/cli)
+- Official MCP server: [github.com/elevenlabs/elevenlabs-mcp](https://github.com/elevenlabs/elevenlabs-mcp)
+- MCP server (agents + KB management): [github.com/jezweb/elevenlabs-mcp-server](https://github.com/jezweb/elevenlabs-mcp-server)
+- ElevenLabs developers overview: [elevenlabs.io/developers](https://elevenlabs.io/developers)
 - Raw last30days engine output: ~/Documents/Last30Days/voice-agents-raw-v3.md
